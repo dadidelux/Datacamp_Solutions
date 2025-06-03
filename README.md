@@ -45,10 +45,11 @@ WITH ranked_weights AS (
         weight,
         ROW_NUMBER() OVER (ORDER BY weight::NUMERIC) AS rn,
         COUNT(*) OVER() AS cnt
-    FROM products
+    FROM
+        products
     WHERE
-        weight ~ E'^\\d+\\.?\\d*\\s*grams$'
-        OR weight ~ E'^\\d+\\.?\\d*$'
+        weight ~ E'^\\d+\\.?\\d*\\s*grams$' OR
+        weight ~ E'^\\d+\\.?\\d*$'
 ),
 median_weight AS (
     SELECT ROUND(AVG(weight::NUMERIC)::NUMERIC, 2) AS median_value
@@ -63,8 +64,10 @@ ranked_prices AS (
         price,
         ROW_NUMBER() OVER (ORDER BY price::NUMERIC) AS rn,
         COUNT(*) OVER() AS cnt
-    FROM products
-    WHERE price IS NOT NULL
+    FROM
+        products
+    WHERE
+        price IS NOT NULL
 ),
 median_price AS (
     SELECT ROUND(AVG(price::NUMERIC)::NUMERIC, 2) AS median_value
@@ -76,15 +79,13 @@ median_price AS (
 )
 SELECT
     product_id,
-    COALESCE(NULLIF(INITCAP(TRIM(product_type)), ''), 'Unknown') AS product_type,
-    COALESCE(NULLIF(INITCAP(TRIM(brand)), '-'), 'Unknown') AS brand,
+    COALESCE(NULLIF(product_type, ''), 'Unknown') AS product_type,
+    COALESCE(NULLIF(brand, '-'), 'Unknown') AS brand,
     ROUND(
         COALESCE(
             CASE
-                WHEN weight ~ E'^\\d+\\.?\\d*\\s*grams$'
-                    THEN CAST(REPLACE(weight, ' grams', '') AS NUMERIC)
-                WHEN weight ~ E'^\\d+\\.?\\d*$'
-                    THEN CAST(weight AS NUMERIC)
+                WHEN weight ~ E'^\\d+\\.?\\d*\\s*grams$' THEN CAST(REPLACE(weight, ' grams', '') AS NUMERIC)
+                WHEN weight ~ E'^\\d+\\.?\\d*$' THEN CAST(weight AS NUMERIC)
             END,
             (SELECT median_value FROM median_weight LIMIT 1)
         )::NUMERIC, 2
@@ -94,8 +95,9 @@ SELECT
     ) AS price,
     COALESCE(average_units_sold::INTEGER, 0) AS average_units_sold,
     COALESCE(year_added::INTEGER, 2022) AS year_added,
-    COALESCE(NULLIF(UPPER(TRIM(stock_location)), ''), 'Unknown') AS stock_location
-FROM products;
+    COALESCE(NULLIF(UPPER(stock_location), ''), 'Unknown') AS stock_location
+FROM
+    products;
 ```
 
 ---
